@@ -1,5 +1,7 @@
 # arabic-ocr-with-azure
-An Azure Document Intelligence-based OCR program
+An Azure Document Intelligence-based OCR program, based on [a source code by Microsoft Software Engineering Manager Anatoly Ponomarev](https://techcommunity.microsoft.com/t5/azure-ai-services-blog/generate-searchable-pdfs-with-azure-form-recognizer/ba-p/3652024), using the Reportlab library to generate PDF files bearing an OCR layer from Document Intelligence's response.
+
+The GUI was created on Tkinter, with [Tkinter-Designer](https://github.com/ParthJadhav/Tkinter-Designer) and [Ttk-Bootstrap](https://ttkbootstrap.readthedocs.io/en/latest/).
 
 To install:
 
@@ -36,7 +38,7 @@ Then install a Python distribution with Pyenv:
 
 To test, run:
 
-```pyenv install <installed version>```
+```pyenv global <installed version>```
 
 Then run:
 
@@ -66,4 +68,4 @@ Clone the Github repo, launch a virtual environment, then:
 
 Lastly, copy the theme to the appropriate folder:
 
-```cp -r "user.py" <your virtual environment>/lib/python3.11/site-packages/ttkbootstrap/themes```
+```cp -r "user.py" <your-virtual-environment>/lib/python<version>/site-packages/ttkbootstrap/themes```
