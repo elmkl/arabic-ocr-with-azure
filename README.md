@@ -68,4 +68,4 @@ Clone the Github repo, launch a virtual environment, then:
 
 Lastly, copy the theme to the appropriate folder:
 
-```cp -r "user.py" <your virtual environment>/lib/python3.11/site-packages/ttkbootstrap/themes```
+```cp -r "user.py" <your-virtual-environment>/lib/python<version>/site-packages/ttkbootstrap/themes```
