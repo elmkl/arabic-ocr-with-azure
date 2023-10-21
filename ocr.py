@@ -384,8 +384,7 @@ class App:
             self.entry_1.insert(0, output_path)
             return
 
-                #Confidence index toggle command
-
+        #Confidence index toggle command
         var1 = IntVar()
         def checker():
             global confidence
@@ -513,7 +512,6 @@ class Console(Text):
   def flush(self):
     pass
 
-# Les deux dans une seule Class: des functions Left Panel et Right Panel ? Ce qui permettrait également de déplacer la console à l'intérieur de Tasks
 class Tasks:
     def __init__(self, master=None, app=None):
         self.master = master
