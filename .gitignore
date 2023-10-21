@@ -130,6 +130,9 @@ venv.bak/
 # mkdocs documentation
 /site
 
+# OS generated files #
+.DS_Store
+
 # mypy
 .mypy_cache/
 .dmypy.json
