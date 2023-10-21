@@ -38,7 +38,7 @@ Then install a Python distribution with Pyenv:
 
 To test, run:
 
-```pyenv install <installed version>```
+```pyenv global <installed version>```
 
 Then run:
 
