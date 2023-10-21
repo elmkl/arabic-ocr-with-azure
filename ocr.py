@@ -697,8 +697,6 @@ class Tasks:
 
 
     def start_page(self):
-        #Déclarer tout ça en haut au moment de make_page_2, voire maque page 1 (Mainpage), réunitialisation de toutes les variables à ce moment ?
-        #Ne pas oublier de réinitialiser corrupt et corrupt_names[]. Le faire en class App ? Mieux codé de réinitialiser à p1
         self.frame.pack(expand=TRUE, fill=BOTH, side=LEFT)
         self.frame2.pack(expand=FALSE, fill=BOTH, side=RIGHT)
         (threading.Thread(target=self.counter_meter()).start)
