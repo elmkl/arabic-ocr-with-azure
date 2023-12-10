@@ -23,7 +23,7 @@ from pdf2image import convert_from_path
 from reportlab.pdfgen import canvas
 from reportlab.lib import pagesizes
 from PIL import Image, ImageSequence, ImageTk, ImageDraw
-from PyPDF2 import PdfWriter, PdfReader
+from pypdf import PdfWriter, PdfReader
 from azure.core.credentials import AzureKeyCredential
 from azure.ai.formrecognizer import DocumentAnalysisClient
 from reportlab.pdfbase import pdfmetrics
@@ -957,6 +957,12 @@ def batch(input_path, output_path):
     tk.messagebox.showinfo("Fin de l'opération", "Toutes les tâches ont été finalisées")
 
 
+def get_dpi():
+    screen = Tk()
+    current_dpi = screen.winfo_fpixels('1i')
+    screen.destroy()
+    print(current_dpi)
+    return current_dpi
 
 if __name__ == "__main__":
     root = ttkb.Window(themename="new")
