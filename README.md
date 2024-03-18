@@ -1,10 +1,10 @@
 # arabic-ocr-with-azure
-An Azure Document Intelligence-based MacOS program, built on [a source code by Microsoft Software Engineering Manager Anatoly Ponomarev](https://techcommunity.microsoft.com/t5/azure-ai-services-blog/generate-searchable-pdfs-with-azure-form-recognizer/ba-p/3652024), using the Reportlab library to generate PDF files bearing an OCR layer from Document Intelligence's response.
+An Azure Document Intelligence-based program, built on [a source code by Microsoft Software Engineering Manager Anatoly Ponomarev](https://techcommunity.microsoft.com/t5/azure-ai-services-blog/generate-searchable-pdfs-with-azure-form-recognizer/ba-p/3652024), using the Reportlab library to generate PDF files bearing an OCR layer from Document Intelligence's response.
 
 The GUI was created on Tkinter, with [Tkinter-Designer](https://github.com/ParthJadhav/Tkinter-Designer) and [Ttk-Bootstrap](https://ttkbootstrap.readthedocs.io/en/latest/).
 
-To install:
-
+# Installation guide
+## Installing TCL/TK (MacOS only)
 If you're using MacOS 14 (Sonoma), start by installing the latest version (8.6.13) of Tcl/Tk with Homebrew, then install a Python distribution with Pyenv, in order to link Python and Tcl/Tk:
 
 ```brew install tcl-tk```
@@ -62,10 +62,15 @@ Tcl Version: 8.6.13
 Tk Version: 8.6.13
 ```
 
+## Configuration 
 Clone the Github repo, launch a virtual environment, then:
 
 ```pip install -r requirements.txt```
 
+If you are on Windows, install a [Windows build](https://github.com/oschwartz10612/poppler-windows/releases/tag/v24.02.0-0) of poppler and extract the contents of `Library/bin/` onto the `poppler-bin` folder of the repo.
+
 Lastly, copy the theme to the appropriate folder:
 
 ```cp -r "user.py" <your-virtual-environment>/lib/python<version>/site-packages/ttkbootstrap/themes```
+
+If a virtual environment was not launched, find the site-packages folder by executing `python -m site --user-site` and replace the `user.py` file on the ttkbootstrap theme folder with the `user.py` in the repo.
