@@ -26,3 +26,4 @@ six==1.16.0
 ttkbootstrap==1.10.1
 typing_extensions==4.7.1
 urllib3==2.0.4
+keyring==24.3.1
