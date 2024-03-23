@@ -35,7 +35,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.colors import Color, black
 from reportlab.graphics.shapes import Rect
 import webbrowser
-
+import keyring
 
 
 if getattr(sys, "frozen", False):
@@ -65,11 +65,17 @@ os.chdir(path)
 
 # Azure Key
 global key
-key = ""
+if keyring.get_password("arabic-ocr", "azure-key") is None: 
+    key = ""
+else:
+    key = keyring.get_password("arabic-ocr", "azure-key")
 
 # Azure Endpoint
 global endpoint
-endpoint = ""
+if keyring.get_password("arabic-ocr", "azure-endpoint") is None: 
+    endpoint = ""
+else:
+    endpoint = keyring.get_password("arabic-ocr", "azure-endpoint")
 
 # Input Path
 global input_path
@@ -98,6 +104,10 @@ unlock = False
 # Toggle: Activating/Deactivating the confidence index
 global confidence
 confidence = 0
+
+# Toggle: Activating/Deactivating exclusive .txt output
+global txt_only
+txt_only = 0
 
 # Corrupt files counter
 global corrupt
@@ -187,6 +197,8 @@ class App:
         self.entry_bg_3 = canvas.create_image(635.0, 241.5, image=self.entry_image_3)
         self.entry_3 = ttkb.Entry(page00, style="custom.TEntry")
         self.entry_3.place(x=498.0, y=228.0, width=274.0, height=25.0)
+        if endpoint != "":
+            self.entry_3.insert(0, endpoint)
 
         canvas.create_text(40.0,
             127.0,
@@ -200,7 +212,7 @@ class App:
             481.0,
             46.0,
             anchor="nw",
-            text="Informations.",
+            text="Informations",
             fill="#505485",
             font=("Roboto Bold", 24 * -1),
         )
@@ -369,6 +381,8 @@ class App:
         self.entry_bg_4 = canvas.create_image(635.0, 159.5, image=entry_image_4)
         self.entry_4 = ttkb.Entry(page00, style="custom.TEntry")
         self.entry_4.place(x=498.0, y=146.0, width=274.0, height=25.0)
+        if key != "":
+            self.entry_4.insert(0, key)
 
         def select_input_path():
             global input_path
@@ -402,6 +416,22 @@ class App:
             font=("Roboto Bold", 14 * -1),
         )
 
+        pdfvar = IntVar()
+        def pdf_check():
+            global txt_only
+            txt_only = 1 if pdfvar.get() == 1 else 0
+
+        pdf_box = ttkb.Checkbutton(page00, bootstyle="square-toggle", variable = pdfvar, onvalue = 1, offvalue = 0, command = pdf_check)
+        pdf_box.place(x=786.0, y=465.0, width=24.0, height=22.0)
+        canvas.create_text(
+            650.0,
+            465.0,
+            anchor="nw",
+            text="TXT seulement",
+            fill="#3A7FF6",
+            font=("Roboto Bold", 14 * -1),
+        )
+
         #Packing the main page
         page00.pack()
 
@@ -413,9 +443,13 @@ class App:
     #Generating the credentials, input and output path
     def generate(self):
         global key
-        key = self.entry_4.get()
+        if key == "":
+            key = self.entry_4.get()
+            keyring.set_password("arabic-ocr", "azure-key", key)
         global endpoint
-        endpoint = self.entry_3.get()
+        if endpoint == "":
+            endpoint = self.entry_3.get()
+            keyring.set_password("arabic-ocr", "azure-endpoint", endpoint)
         global input_path
         input_path = self.entry_2.get()
         input_path = input_path.strip()
@@ -785,7 +819,7 @@ def ocr(input_path, output_path, input_file):
             # read existing PDF as images
             image_pages = convert_from_path(
                 input_file,
-                poppler_path=poppler_bin,
+                #poppler_path=poppler_bin,
                 dpi=150,
                 fmt="JPEG",
                 jpegopt={"quality": 90, "progressive": True, "optimize": True},
@@ -832,9 +866,10 @@ def ocr(input_path, output_path, input_file):
                 f"----#{len(ocr_results.paragraphs)} paragraphes détectés dans le document {input_filename}----\n"
             )
 
-            with open(txt_file, "w", encoding='utf-8') as f:
-                for paragraph in ocr_results.paragraphs:
-                    f.write(paragraph.content + "\n" + "\n")
+            
+        with open(txt_file, "w", encoding='utf-8') as f:
+            for paragraph in ocr_results.paragraphs:
+                f.write(paragraph.content + "\n" + "\n")
 
             f.close()
             print(f"✓ {datetime.now():%d/%m/%Y %H:%M:%S}: Fichier .txt du PDF {input_filename} créé.\n")
@@ -843,77 +878,79 @@ def ocr(input_path, output_path, input_file):
         print(f"{datetime.now():%d/%m/%Y %H:%M:%S}: Création du fichier...\n")
         output = PdfWriter()
         default_font = "Al Nile"
-        for page_id, page in enumerate(ocr_results.pages):
-            ocr_overlay = io.BytesIO()
+        global txt_only
+        if txt_only == 0:
+            for page_id, page in enumerate(ocr_results.pages):
+                ocr_overlay = io.BytesIO()
 
-            # Calculate overlay PDF page size
-            if image_pages[page_id].height > image_pages[page_id].width:
-                page_scale = float(image_pages[page_id].height) / pagesizes.letter[1]
-            else:
-                page_scale = float(image_pages[page_id].width) / pagesizes.letter[1]
+                # Calculate overlay PDF page size
+                if image_pages[page_id].height > image_pages[page_id].width:
+                    page_scale = float(image_pages[page_id].height) / pagesizes.letter[1]
+                else:
+                    page_scale = float(image_pages[page_id].width) / pagesizes.letter[1]
 
-            page_width = float(image_pages[page_id].width) / page_scale
-            page_height = float(image_pages[page_id].height) / page_scale
+                page_width = float(image_pages[page_id].width) / page_scale
+                page_height = float(image_pages[page_id].height) / page_scale
 
-            scale = (page_width / page.width + page_height / page.height) / 2.0
-            pdf_canvas = canvas.Canvas(ocr_overlay, pagesize=(page_width, page_height))
+                scale = (page_width / page.width + page_height / page.height) / 2.0
+                pdf_canvas = canvas.Canvas(ocr_overlay, pagesize=(page_width, page_height))
 
-            # Add image into PDF page
-            pdf_canvas.drawInlineImage(image_pages[page_id], 0, 0, width=page_width, height=page_height, preserveAspectRatio=True)
-            
-            text = pdf_canvas.beginText()
-            # Set text rendering mode to invisible
-            text.setTextRenderMode(3)
-            for word in page.words:
-                # Calculate optimal font size
-                desired_text_width = max(dist(word.polygon[0], word.polygon[1]), dist(word.polygon[3], word.polygon[2])) * scale
-                desired_text_height = max(dist(word.polygon[1], word.polygon[2]), dist(word.polygon[0], word.polygon[3])) * scale
-                font_size = desired_text_height
-                actual_text_width = pdf_canvas.stringWidth(word.content, default_font, font_size)
-
-                # Calculate text rotation angle
-                text_angle = math.atan2((word.polygon[1].y - word.polygon[0].y + word.polygon[2].y - word.polygon[3].y) / 2.0, 
-                                        (word.polygon[1].x - word.polygon[0].x + word.polygon[2].x - word.polygon[3].x) / 2.0)
-                text.setFont(default_font, font_size)
-                text.setTextTransform(math.cos(text_angle), -math.sin(text_angle), math.sin(text_angle), math.cos(text_angle), word.polygon[3].x * scale, page_height - word.polygon[3].y * scale)
-                text.setHorizScale(desired_text_width / actual_text_width * 100)
+                # Add image into PDF page
+                pdf_canvas.drawInlineImage(image_pages[page_id], 0, 0, width=page_width, height=page_height, preserveAspectRatio=True)
                 
-                # Reshaping ar chars
-                if confidence == 0:
-                    text.textOut(get_display(reshape(word.content + " ")))
-                if confidence == 1:
-                    if word.confidence >= 0.8:
+                text = pdf_canvas.beginText()
+                # Set text rendering mode to invisible
+                text.setTextRenderMode(3)
+                for word in page.words:
+                    # Calculate optimal font size
+                    desired_text_width = max(dist(word.polygon[0], word.polygon[1]), dist(word.polygon[3], word.polygon[2])) * scale
+                    desired_text_height = max(dist(word.polygon[1], word.polygon[2]), dist(word.polygon[0], word.polygon[3])) * scale
+                    font_size = desired_text_height
+                    actual_text_width = pdf_canvas.stringWidth(word.content, default_font, font_size)
+
+                    # Calculate text rotation angle
+                    text_angle = math.atan2((word.polygon[1].y - word.polygon[0].y + word.polygon[2].y - word.polygon[3].y) / 2.0, 
+                                            (word.polygon[1].x - word.polygon[0].x + word.polygon[2].x - word.polygon[3].x) / 2.0)
+                    text.setFont(default_font, font_size)
+                    text.setTextTransform(math.cos(text_angle), -math.sin(text_angle), math.sin(text_angle), math.cos(text_angle), word.polygon[3].x * scale, page_height - word.polygon[3].y * scale)
+                    text.setHorizScale(desired_text_width / actual_text_width * 100)
+                    
+                    # Reshaping ar chars
+                    if confidence == 0:
                         text.textOut(get_display(reshape(word.content + " ")))
-                    if 0.5 < word.confidence < 0.8:
-                        yellowtransparent = Color(255, 211, 0, alpha=0.5)
-                        pdf_canvas.setFillColor(yellowtransparent)
-                        pdf_canvas.rect(text._x, text._y, desired_text_width, desired_text_height, fill = 1, stroke = 0)
-                        pdf_canvas.setFillColor(black)
-                        text.textOut(get_display(reshape(word.content + " ")))
-                    if word.confidence <= 0.5:
-                        redtransparent = Color( 100, 0, 0, alpha=0.5)
-                        pdf_canvas.setFillColor(redtransparent)
-                        pdf_canvas.rect(text._x, text._y, desired_text_width, desired_text_height, fill = 1, stroke = 0)
-                        pdf_canvas.setFillColor(black)
-                        text.textOut(get_display(reshape(word.content + " ")))
-                        
+                    if confidence == 1:
+                        if word.confidence >= 0.8:
+                            text.textOut(get_display(reshape(word.content + " ")))
+                        if 0.5 < word.confidence < 0.8:
+                            yellowtransparent = Color(255, 211, 0, alpha=0.5)
+                            pdf_canvas.setFillColor(yellowtransparent)
+                            pdf_canvas.rect(text._x, text._y, desired_text_width, desired_text_height, fill = 1, stroke = 0)
+                            pdf_canvas.setFillColor(black)
+                            text.textOut(get_display(reshape(word.content + " ")))
+                        if word.confidence <= 0.5:
+                            redtransparent = Color( 100, 0, 0, alpha=0.5)
+                            pdf_canvas.setFillColor(redtransparent)
+                            pdf_canvas.rect(text._x, text._y, desired_text_width, desired_text_height, fill = 1, stroke = 0)
+                            pdf_canvas.setFillColor(black)
+                            text.textOut(get_display(reshape(word.content + " ")))
+                            
 
-            pdf_canvas.drawText(text)
-            pdf_canvas.save()
+                pdf_canvas.drawText(text)
+                pdf_canvas.save()
 
-            # Move to the beginning of the buffer
-            ocr_overlay.seek(0)
+                # Move to the beginning of the buffer
+                ocr_overlay.seek(0)
 
-            # Create a new PDF page
-            new_pdf_page = PdfReader(ocr_overlay)
-            output.add_page(new_pdf_page.pages[0])
+                # Create a new PDF page
+                new_pdf_page = PdfReader(ocr_overlay)
+                output.add_page(new_pdf_page.pages[0])
 
-        # Save output searchable PDF file
-        with open(output_file, "wb") as outputStream:
-            output.write(outputStream)
-            f.close()
-        print(f"✓ {datetime.now():%d/%m/%Y %H:%M:%S}: PDF créé: {output_filename}_ocr.pdf\n")
-        counter += 1
+                # Save output searchable PDF file
+                with open(output_file, "wb") as outputStream:
+                    output.write(outputStream)
+                    f.close()
+                print(f"✓ {datetime.now():%d/%m/%Y %H:%M:%S}: PDF créé: {output_filename}_ocr.pdf\n")
+                counter += 1
 
     else:
         print(f"❐ {datetime.now():%d/%m/%Y %H:%M:%S}: Le fichier {output_filename}._ocr.pdf existe déjà\n")
